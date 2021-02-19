@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome</title>
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/8.2.6/firebase-app.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/8.2.6/firebase-auth.js"></script>
+    <script defer src="/__/firebase/8.2.6/firebase-database.js"></script>
+    <script defer src="/__/firebase/8.2.6/firebase-messaging.js"></script>
+    <script defer src="/__/firebase/8.2.6/firebase-storage.js"></script>
+    <!-- initialize the SDK after all desired features are loaded -->
+    <script defer src="/__/firebase/init.js"></script>
+
+    <link href='fullcalendar/main.css' rel='stylesheet' />
+    <script src='fullcalendar/main.js'></script>
+
+    <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      .message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
+      .message h2 { color: #00008B; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
+      .message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
+      .message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
+      .message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      .message, .message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body, .message { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #00008B; }
+      }
+
+form {
+  /* This bit sets up the horizontal layout */
+  display:flex;
+  flex-direction:row;
+  
+  /* This bit draws the box around it */
+  border:1px solid grey;
+
+  /* I've used padding so you can see the edges of the elements. */
+  padding:2px;
+}
+
+input {
+  /* Tell the input to use all the available space */
+  flex-grow:2;
+  /* And hide the input's outline, so the form looks like the outline */
+  border:none;
+}
+
+input:focus {
+  /* removing the input focus blue box. Put this on the form if you like. */
+  outline: none;
+}
+
+button {
+  /* Just a little styling to make it pretty */
+  border:1px solid #00008B;
+  background:#00008B;
+  color:white;
+}
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+    </style>
+  </head>
+  <body>
+    <div class="message" id="landing" style="display:block;">
+      <h2>Welcome</h2>
+      <h1>Get your access code ready</h1>
+      <p>If you are already a user, type your ASU ID to login</p>
+      <form onsubmit="codeSubmit();return false">
+      	<input id="code" />
+      	<button type="button" onclick="codeSubmit();">Go</button>
+      </form>
+
+    </div>
+
+    <div class="message" id="signup" style="display:none;">
+    	<h2>Success!</h2>
+    	<h1>Log in with your ASU credentials</h1>
+    	<p>Private information is secure and non-accessible by anyone else. It is protected by multiple layers of passwords, authentication and encryption.</p>
+    	<form onsubmit="return false;">
+    		<input placeholder='Username' id="username">
+    	</form>
+    	<form onsubmit="addUser();return false">
+    		<input placeholder='Password' id="password" type="password">
+    		<button type="button" onclick="addUser();">Log in</button>
+    	</form>
+    </div>
+
+    <div id="app" style="display:none;">
+
+    	<div id='calendar'></div>
+
+    	<div id="myModal" class="modal">
+
+		  <div class="modal-content">
+		    <span class="close">&times;</span>
+		    <b id="date">Date</b>
+		    <br>
+		    <label for="gyms">Choose a gym:</label>
+		    <select name="gyms" id="gyms">
+		    	<option value="east">Tempe East Weight Room</option>
+		    	<option value="west">Tempe West Weight Room</option>
+		    	<option value="twobay">Tempe 2 Bay Weight Room</option>
+		    </select>
+
+		    <br>
+
+		    <label for="times">Choose a time:</label>
+		    <select name="times" id="times">
+
+		    </select>
+
+		    <br>
+
+		    <button type="button" id="submittime">Book</button>
+
+		    <br>
+
+		    <button type="button" id="deletetime">Delete existing time</button>
+		  </div>
+
+		</div>
+
+	</div>
+
+
+    <script>
+    var eastTimesWeekDay = ["6 - 6:50 AM", "7 - 7:50 AM", "8 - 8:50 AM", "9 - 9:50 AM","10 - 10:50 AM","11 - 11:50 AM","12 - 12:50 PM","1 - 1:50 PM","2 - 2:50 PM","3 - 3:50 PM","4 - 4:50 PM","5 - 5:50 PM","6 - 6:50 PM","7 - 7:50 PM","8 - 8:50 PM","9 - 9:50 PM","10 - 10:50 PM"];
+    	
+    var eastTimesWeekEnd = ["9 - 9:50 AM","10 - 10:50 AM","11 - 11:50 AM","12 - 12:50 PM","1 - 1:50 PM","2 - 2:50 PM","3 - 3:50 PM","4 - 4:50 PM","5 - 5:50 PM","6 - 6:50 PM","7 - 7:50 PM","8 - 8:50 PM","9 - 9:50 PM","10 - 10:50 PM"];
+
+    var twoBayAndWestTimesWeekDay = ["6 - 7:20 AM", "7:30 - 8:20 AM", "8:30 - 9:20 AM", "9:30 - 10:20 AM", "10:30 - 11:20 AM", "11:30 AM - 12:20 PM", "12:30 - 1:20 PM", "1:30 - 2:20 PM", "2:30 - 3:20 PM", "3:30 - 4:20 PM", "4:30 - 5:20 PM", "5:30 - 6:20 PM", "6:30 - 7:20 PM", "7:30 - 8:20 PM", "8:30 - 9:20 PM", "9:30 - 10:50 PM"];
+
+    var twoBayAndWestTimesWeekEnd = ["9 - 10:20 AM", "10:30 - 11:20 AM", "11:30 AM - 12:20 PM", "12:30 - 1:20 PM", "1:30 - 2:20 PM", "2:30 - 3:20 PM", "3:30 - 4:20 PM", "4:30 - 5:20 PM", "5:30 - 6:20 PM", "6:30 - 7:20 PM", "7:30 - 8:20 PM", "8:30 - 9:20 PM", "9:30 - 10:50 PM"];
+
+    var currentDate = Date();
+
+    function removeOptions(selectElement) {
+	   var i, L = selectElement.options.length - 1;
+	   for(i = L; i >= 0; i--) {
+	      selectElement.remove(i);
+	   }
+	}
+
+    function loadCalendar(data) {
+
+    	var calendarEl = document.getElementById('calendar');
+
+    	var events = [];
+
+    	console.log(data);
+
+    	for (date in data) {
+	  			console.log(date);
+	  			var res = date.split("-");
+	  			var date_object = new Date(2021, res[0],res[1]);
+	  			if (!isNaN(date_object.valueOf())) { // valid?
+
+	  				var dateString = new Date(date_object.getTime() - (date_object.getTimezoneOffset() * 60000 ))
+                    .toISOString()
+                    .split("T")[0];
+
+		            events.push({title:data[date],start:dateString});
+		          } else {
+		            alert('Invalid date.');
+		          }
+  		}
+
+  		console.log(events);
+
+
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    initialDate: '2021-02-07',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    events: events,
+
+    dateClick: function(date) {
+    	console.log(date)
+    	document.getElementById('date').innerHTML = date.date.toDateString();
+    	openSelector();
+    	currentDate = date.date;
+
+    	let element = document.getElementById('gyms');
+    	element.value = 'east';
+
+    	day_of_week = currentDate.getDay();
+			temp_array = [];
+			if (day_of_week == 0 || day_of_week == 6) {
+				temp_array = eastTimesWeekEnd
+			} else {
+				temp_array = eastTimesWeekDay
+			}
+		var timeSelect = document.getElementById('times');
+		removeOptions(timeSelect);
+		for (var i = 0; i < temp_array.length; i++) {
+					var option = document.createElement('option');
+					option.text = temp_array[i];
+					option.value = temp_array[i];
+					timeSelect.add(option);
+				}
+
+	  	}
+  });
+
+
+  var modal = document.getElementById("myModal");
+
+	// Get the button that opens the modal
+	var btn = document.getElementById("myBtn");
+
+	// Get the <span> element that closes the modal
+	var span = document.getElementsByClassName("close")[0];
+
+	// When the user clicks on the button, open the modal 
+	function openSelector() {
+	  modal.style.display = "block";
+	}
+
+	// When the user clicks on <span> (x), close the modal
+	span.onclick = function() {
+	  modal.style.display = "none";
+	}
+
+	// When the user clicks anywhere outside of the modal, close it
+	window.onclick = function(event) {
+	  if (event.target == modal) {
+	    modal.style.display = "none";
+	  }
+	}
+
+    calendar.render();
+
+    }
+
+    	document.addEventListener('DOMContentLoaded', function() {
+
+	var gymSelect = document.getElementById('gyms');
+	var timeSelect = document.getElementById('times');
+
+
+	gymSelect.onchange = function() {
+		var gym = gymSelect.value;
+		console.log(gym);
+		if (gym == "east") {
+			removeOptions(timeSelect);
+
+			day_of_week = currentDate.getDay();
+			temp_array = [];
+			if (day_of_week == 0 || day_of_week == 6) {
+				temp_array = eastTimesWeekEnd
+			} else {
+				temp_array = eastTimesWeekDay
+			}
+
+			for (var i = 0; i < temp_array.length; i++) {
+				var option = document.createElement('option');
+				option.text = temp_array[i];
+				option.value = temp_array[i];
+				timeSelect.add(option);
+			}
+		} else {
+			removeOptions(timeSelect);
+
+			day_of_week = currentDate.getDay();
+			temp_array = [];
+			if (day_of_week == 0 || day_of_week == 6) {
+				temp_array = twoBayAndWestTimesWeekEnd
+			} else {
+				temp_array = twoBayAndWestTimesWeekDay
+			}
+
+			for (var i = 0; i < temp_array.length; i++) {
+				var option = document.createElement('option');
+				option.text = temp_array[i];
+				option.value = temp_array[i];
+				timeSelect.add(option);
+			}
+		}
+	}
+
+
+
+
+			var submitTime = document.getElementById('submittime');
+
+			submitTime.onclick = function() {
+				var gym = gymSelect.value;
+				var time = timeSelect.value;
+
+				console.log(gym + time);
+
+				console.log(currentDate.getDate())
+
+				var datestring = currentDate.getMonth() + '-' + currentDate.getDate();
+
+				firebase.database().ref('/slots/' + datestring + '/' + currentuser).set({"gym":gym,"time":time});
+
+				firebase.database().ref('/calendar/' + currentuser + '/' + datestring).set(time);
+				document.getElementById("myModal").style.display = "none";
+				populateCalendar();
+			}
+
+			var deleteTime = document.getElementById('deletetime');
+			deleteTime.onclick = function() {
+				var datestring = currentDate.getMonth() + '-' + currentDate.getDate();
+				firebase.database().ref('/slots/' + datestring + '/' + currentuser).remove();
+
+				firebase.database().ref('/calendar/' + currentuser + '/' + datestring).remove();
+				document.getElementById("myModal").style.display = "none";
+				populateCalendar();
+			}
+
+});
+
+
+    var firebaseConfig = {
+	    apiKey: "AIzaSyAhPyIZb5qLxQyrJ7R793xDpLFys7GAvLU",
+	    authDomain: "topvideo-242c2.firebaseapp.com",
+	    databaseURL: "https://topvideo-242c2.firebaseio.com",
+	    projectId: "topvideo-242c2",
+	    storageBucket: "topvideo-242c2.appspot.com",
+	    messagingSenderId: "174286722138",
+	    appId: "1:174286722138:web:b040c01d089f30d30ef463",
+	    measurementId: "G-1JGJYPBDLE"
+	  };
+	  // Initialize Firebase
+	  firebase.initializeApp(firebaseConfig);
+	  firebase.analytics();
+
+	  var currentuser = '';
+
+	  function populateCalendar() {
+	  	firebase.database().ref('/calendar/' + currentuser).once('value').then(function(snapshot) {
+	  		var data = snapshot.val()
+	  		loadCalendar(data);
+	  	})
+	  }
+
+      function codeSubmit() {
+      	console.log('button clicked!')
+      	/*var docRef = db.collection('access').doc('code');
+      	docRef.get().then((doc) => {
+      		if (doc.exists) {
+      			console.log(doc.data());
+      		} else {
+      			console.log("No document");
+      		}
+      	}).catch((error) => {
+      		console.log(error);
+      	}) */
+      	firebase.database().ref('/code/').once('value').then(function(snapshot) {
+              code = snapshot.val();
+              console.log(code);
+                var input = document.getElementById('code').value;
+                if (code == input) {
+                	console.log('success');
+                	document.getElementById('landing').style.display = 'none';
+                	document.getElementById('signup').style.display = 'block';
+                } else {
+                	console.log('fail')
+                	firebase.database().ref('/usernames/' + input).once('value').then(function(snapshot) {
+                		username = snapshot.val();
+                		console.log(username);
+                		if (username == true) {
+                			currentuser = snapshot.key;
+                			// they have an account and are ready to use application 
+                			document.getElementById('landing').style.display = "none";
+                			document.getElementById('app').style.display = "block";
+                			populateCalendar();
+                		}
+                	})
+                }
+          });
+      }
+
+      function addUser() {
+      	console.log('user being added');
+      	var username = document.getElementById('username').value;
+      	var password = document.getElementById('password').value;
+
+      	firebase.database().ref('/users/' + username).set(password);
+      	firebase.database().ref('/usernames/' + username).set(true);
+      	console.log('user added');
+      	document.getElementById('signup').style.display = 'none';
+      	currentuser = username;
+      	document.getElementById('app').style.display = "block";
+      	populateCalendar();
+      }
+
+
+   
+    </script>
+  </body>
+</html>
